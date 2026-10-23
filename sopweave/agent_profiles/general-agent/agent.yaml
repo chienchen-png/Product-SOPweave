@@ -1,0 +1,20 @@
+id: general-agent
+name: 通用智能体
+version: 4.0.2
+description: 面向财务人员的通用助手，按需加载 Office、数据核对与分析工具。
+enabled: true
+default_model_id: ''
+progressive_tools: true
+allow_user_skills: true
+toolsets: [core, skills, interaction, office, project-data, analysis]
+tools: []
+skills: [office-files, data-reconcile, financial-modeling]
+approval_policy:
+  run_process: always
+  write_text: work_mode
+  edit_text: work_mode
+  edit_workbook: work_mode
+  edit_document: work_mode
+  apply_data_changes: work_mode
+  export_dataset: work_mode
+max_turns: 30

@@ -1,245 +1,253 @@
-# Finance Agent Workbench · 财务智能体工作台
+# SOPweave
 
-> 面向财务人员的**本地离线**智能体工作台：用自然语言下达财务任务，AI 读取 Excel → 导入 SQLite 数据平面 → 核对分析 → 审批后写回原文件，全程可视、可审计、可追溯。
+> 本地优先的办公智能体工作台：用自然语言，把工作经验编织成可复用的 SOP。
 
-**核心定位**：不是通用聊天机器人，而是 **「Excel 数据核对 + 受控写回」的垂直自动化平台**，并演进为 **「对话 + 集成应用」双形态**——对话承接长尾自由任务，集成应用以向导方式固化高频流程。
+![Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%2F11-2563eb)
+![Python 3.14](https://img.shields.io/badge/Python-3.14-3776ab)
+![React + Vite](https://img.shields.io/badge/UI-React%20%2B%20Vite-06b6d4)
+![OpenAI Agents SDK](https://img.shields.io/badge/runtime-OpenAI%20Agents%20SDK-111827)
+![MIT](https://img.shields.io/badge/license-MIT-green)
 
-- 后端约 **15,000 行 Python**，**60+ REST API**，**39 个智能体工具**
-- 前端 React SPA（Vite），构建产物由 Flask 托管
-- **完全离线 / 内网部署**，依赖全部本地化（见 `offline_packages/`）
+SOPweave 是面向财务、办公和数据分析的本地 Agent Harness。它把项目文件、结构化数据库、Office 工具和 AI 对话放在同一个工作区，让用户完成任务，并将有效的工作过程保存为下次可调用的流程。
 
----
+无需搭建节点图或编写脚本。描述需求、上传业务文档，或从已完成的对话中复盘，AI 就能协助整理 SOP；用户预览、修改并确认后发布。
 
-## 一、核心特性
+**本机存储、自备模型 API、无广告、无平台账户、无平台额度系统。** AI 请求需要连接所配置的模型服务。
 
-### 1. 数据平面为中心，Excel 100% 保真
+## 交给智能体部署
 
-```
-Excel (.xlsx/.xls)  ──import──▶  SQLite 数据平面 (data_* 表)
-                                        │
-                          AI 核对 / 分析 / 修改（只在库内操作）
-                                        ▼
-                                 变更日志 project_data_changes
-                                        │
-                          导出（precise 精确回写）──▶  Excel + .bak 备份
-```
+将下面整段提示词复制给能操作本地终端的编程智能体，让它拉取项目、检查环境、启动服务，并引导你完成首次使用。当前支持 Windows 10/11 x64。
 
-**SQLite 数据平面是唯一事实源**，AI 永远只在库内操作；Excel 仅在「导入（读）」和「写回（补丁式）」时被接触——因此 **格式 / 公式 / 合并单元格在未改动区域 100% 保留**。
+```text
+请帮我在本机部署并使用 SOPweave。
+官方仓库：https://github.com/chienchen-png/Product-Finance-Agent-Workbench
 
-### 2. 受控写回与审计闭环
+请实际执行安装与验证，并用适合非技术用户的中文说明进度：
 
-- 所有写操作（`update_rows` / `insert_rows` / `delete_rows`）先入**字段级变更日志**
-- 前端「待写回 / 写回记录」两个 Tab 可视化审计
-- 写回前自动备份 `.bak`，写回后记录 `writeback_history`
-
-### 3. 集成应用（隐藏项目组件架构）
-
-每个 AI 集成应用**本质上是「一套前端页面 + 一个隐藏项目」**，复用主工作台的项目 / 存储 / 文件 / 前端基础设施：
-
-| 应用 | 说明 | 形态 |
-| :--- | :--- | :--- |
-| **① 数据核对与校验** | data-reconcile skill 固化为 6 步向导：确定性核对（秒级）+ 一次 LLM 生成报告、多轮审计循环、**确定性写回 Excel** | 可写回 |
-| **② 财务建模与分析** | financial-modeling skill 固化为 4 步向导：32 个财务模型 + 24 类图表模板、变量映射、AI 撰写券商研报风格报告 | 纯只读分析 |
-
-一个集成应用 = 三件套：
-
-| 组成 | 说明 |
-| :--- | :--- |
-| 隐藏项目 | `projects` 表一条 `__app_*` 前缀记录，`GET /api/projects` 默认过滤 |
-| 绑定项目目录 | `data/app-workspaces/<app>/` 专属产物目录 |
-| 绑定项目数据库 | 统一 `data/app.db`，按 `project_id` 隔离 |
-
-> **为什么巧妙**：修 bug = 改前端页面（`frontend/src/pages/*AppPage.tsx`）+ 后端几个端点（`routes/apps.py`），不必重构框架。
-
-### 4. 渐进式 Skill 加载（省算力）
-
-对齐 VS Code Copilot 的三层模型，按需加载：
-
-| 层级 | 内容 | 加载时机 |
-| :--- | :--- | :--- |
-| **L0** | `.github/agent.md` | 常驻系统提示词 |
-| **L1** | `SKILL.md` | 任务匹配时按需注入 |
-| **L2** | `references/` 资源 | 工具调用时读取 |
-
-配套优化：数据索引按需化（省约 92% token）、简单任务跳过规划、确定性计算交给 `reconcile_variables` 工具。
-
-### 5. 图表与公式
-
-- **ECharts 5** 渲染，24 类模板 + 变体体系（2D 可交互：拖拽缩放、dataZoom、下载）
-- 3D 图（waterfall3d / bar3d / scatter3d）由 **Python matplotlib(mplot3d)** 生成静态 PNG（点击放大 / 下载）
-- **KaTeX** 数学公式渲染
-- 图表交付仅 **SVG（2D 矢量）+ HTML（交互 / 3D）**
-
-### 6. 文件预览与文档导出
-
-- 双击文件按类型分流：Markdown（Vditor 即时渲染）/ PDF / 图片 / 文本 / Office（本地打开）
-- 新标签页全屏预览
-- **Pandoc** 导出 Word（支持 GB/T 7713 学位论文排版模板），PDF 走浏览器打印
-
----
-
-## 二、技术栈
-
-| 领域 | 技术 | 版本 |
-| :--- | :--- | :--- |
-| 后端框架 | Flask | 3.1.3 |
-| 数据库 | SQLite（WAL 模式，单文件 `data/app.db`） | 内置 |
-| 智能体引擎 | smolagents `ToolCallingAgent` | ≥1.26.0 |
-| Excel 读写 | openpyxl / xlrd / xlwt / xlutils / formulas | — |
-| 数据分析 | numpy / pandas / scipy / matplotlib / plotly | — |
-| 前端框架 | React + TypeScript | 18.3 / 5.6 |
-| 构建工具 | Vite | 6.x |
-| 样式 | Tailwind CSS | 4.x |
-| 对话 UI | @assistant-ui/react | 0.8 |
-| 图表 | ECharts + echarts-gl + echarts-stat | 5.6 |
-| 编辑器 | Vditor（Markdown，内网化） | 3.11.3 |
-| 公式渲染 | KaTeX | 0.16 |
-| 文档导出 | Pandoc | 3.10.2 |
-
-**支持的大模型**：DeepSeek / 智谱 GLM / 通义千问 / 本地模型（思考强度统一 `medium`，本地模型不传思考参数以避免 400）。
-
----
-
-## 三、目录结构
-
-```
-finance-agent-workbench/
-├── app.py                  # Flask 应用入口（应用工厂 + 会话计时器生命周期）
-├── requirements.txt
-├── config/                 # settings.py 全局配置
-├── routes/                 # REST API 层（Flask Blueprint）
-│   ├── projects.py         #   项目管理
-│   ├── project_data.py     #   数据平面（导入 / 查询 / 变更 / 写回）
-│   ├── files.py            #   文件浏览 / 预览 / 导出
-│   ├── agents.py           #   智能体运行
-│   ├── apps.py             #   集成应用端点（*_bp）
-│   ├── dashboard.py        #   工作台总览聚合
-│   └── ...
-├── agent/                  # 智能体引擎
-│   ├── smol_engine.py      #   smolagents 编排
-│   ├── smol_bridge.py      #   引擎桥接
-│   ├── context_manager.py  #   上下文压缩与管理
-│   ├── tool_registry.py    #   工具注册表
-│   ├── skill_loader.py     #   Skill 三层渐进加载
-│   └── approval/           #   写操作审批
-├── tools/                  # 39 个智能体工具实现
-├── storage/                # SQLite 存储层
-│   ├── db.py               #   连接与建表
-│   ├── schema.sql          #   表结构
-│   ├── tmp_db.py           #   临时库快照（核对/写回隔离，不污染主库）
-│   └── *_store.py          #   项目/数据/运行/会话/Token 等各域存储
-├── skills/                 # Skill 定义（data-reconcile 等）
-├── .github/                # agent.md（L0 常驻）+ skills（L1 按需）
-├── frontend/               # React SPA 源码
-│   └── src/pages/          #   含 *AppPage.tsx 集成应用前端页
-├── static/                 # 前端构建产物 + 第三方库（KaTeX / Mermaid）
-├── templates/              # Jinja 模板
-├── scripts/                # 构建 / 校验 / 软著材料脚本
-├── docs/                   # 架构文档 + 函数与变量总文档
-│   ├── 项目架构文档.md      #   ★ 唯一权威架构说明
-│   └── 函数与变量总文档.md  #   全部函数 / 变量索引
-├── offline_packages/       # 离线安装包（wheel，供无网环境 pip install）
-└── data/                   # 运行时数据（SQLite / 工作区，不入库）
+1. 先检查操作系统、Git、CPython 3.14 x64 和 Node.js 24 或 25。
+   缺少依赖时，提供官方安装来源与步骤，引导我安装后继续；其他操作系统先说明目前的支持边界。
+2. 在合适的本地目录执行：
+   git clone https://github.com/chienchen-png/Product-Finance-Agent-Workbench.git SOPweave
+   如果目标目录已存在，先检查内容和 Git 状态，不覆盖已有项目或用户数据。
+3. 阅读仓库 README.md、CONTRIBUTING.md、sopweave/docs/LAUNCHER.md 和 OFFLINE.md，
+   以当前检出的代码和文档为准。在仓库的 sopweave 目录，使用已确认的 Python 3.14 x64 执行：
+   python -m venv .runtime
+   .\.runtime\Scripts\python.exe -m pip install --require-hashes -r requirements.lock
+   npm ci --prefix frontend
+   npm run build --prefix frontend
+   powershell -NoProfile -File scripts\build_launcher.ps1 -DesktopShortcut
+4. 运行 .\.runtime\Scripts\python.exe scripts\check_runtime.py
+   和 .\.runtime\Scripts\python.exe -m pip check，失败时定位原因后修复。
+   不放宽依赖锁、不替换模型协议，也不修改应用业务代码来绕过安装错误。
+5. 启动 .\SOPweave.exe，等待 /api/health 返回 success=true、data.product=sopweave、data.status=ready，
+   然后打开 http://127.0.0.1:8080。端口冲突时使用 --port 8081，并同步调整验证地址。
+6. 引导我在“设置 → 模型配置”中填写自己的供应商、API Key 和模型标识，完成五项能力检查。
+   API Key 只在本机配置页面填写，不要求我把密钥发到聊天中，也不要打印密钥或提交到 Git。
+7. 带我创建一个使用样例目录的测试项目，演示发送简单问题、导入人工样例表格、查看数据库，
+   再演示在“财务 SOP”中从自然语言创建草稿、预览确认、发布，并在项目对话中选择调用。
+   涉及真实模型调用时先说明会使用我的供应商额度；数据修改先用人工样例演示。
+8. 最后告诉我：安装位置、启动入口、访问地址、数据与日志位置、如何停止服务，以及下一次如何打开。
+   若有无法完成的步骤，明确记录失败命令和原因，不把尚未通过的步骤标记为成功。
 ```
 
----
+## 核心特点
 
-## 四、快速开始
+| 特点 | 实现方式 |
+| --- | --- |
+| 本地优先 | Web 服务、SQLite、项目文件、会话、报告和统计默认保存在本机 |
+| 自然语言创建流程 | 从需求文字、文档或已完成对话生成 SOP 草稿，审阅后发布 |
+| 可迁移的 SOP | 使用 Markdown/YAML 定义，支持 GitHub / ZIP Skill 导入与兼容性检查 |
+| 统一智能体运行时 | 基于 OpenAI Agents SDK，处理流式输出、工具调用、询问、审批、停止与恢复 |
+| 确定性业务工具 | 文件操作、Excel/Word、数据查询、财务计算、核对、图表与报告 |
+| 按需加载 | 工具与 SOP 按任务发现和加载，减少无关上下文 |
+| 可追踪执行 | 保存运行事件、工具结果、数据版本、变更日志和 Token 使用量 |
+| 模型自选 | DeepSeek、智谱 GLM、硅基流动及自定义兼容服务 |
+
+## 从工作经验到可执行 SOP
+
+平台维护一个通用 Agent，SOP（Skill）描述具体业务的输入、工具、步骤和约束。用户创建流程即可，无需额外配置一个智能体。
+
+```mermaid
+flowchart LR
+    A[描述需求 / 上传文档 / 复盘对话] --> B[AI 整理 SOP 草稿]
+    B --> C[预览、修改与试运行]
+    C --> D[用户确认发布]
+    D --> E[对话中自动发现或指定调用]
+    E --> F[保存工具证据与运行版本]
+    F --> A
+```
+
+- 左侧“财务 SOP”统一管理内置流程和用户流程；内置内容只读，用户 SOP 可新增、编辑、导入和删除。
+- 项目输入框为每次发送选择 SOP 范围，运行开始后固定所用版本。
+- 重要规则可由程序强制执行；金额计算、数据版本、写回校验和审批由确定性工具处理。
+- GitHub / ZIP 导入先检查内容和兼容性，导入脚本不会自动执行。
+- 已完成的对话可以整理为新 SOP 草稿，预览确认后再发布。
+
+## 功能概览
+
+| 功能 | 能力 |
+| --- | --- |
+| 项目空间 | 选择本地工作目录；浏览、搜索、上传、新建、编辑、复制、重命名、删除和引用文件 |
+| AI 对话 | 流式文本与思考展示、工具过程、询问与审批、停止、断线恢复、上下文占用与清空 |
+| 项目数据库 | 导入 XLS/XLSX；确认表头和字段；查看数据索引、来源坐标及修改日志；查询、修改与导出 |
+| Excel / Word | 检查工作簿、按 Sheet / A1 范围读取和编辑；按文档块读取及修改 DOCX |
+| 数据核对与校验 | 配置依据表和分表、匹配键及容差；计算差异，确认后写回允许处理的数据 |
+| 财务建模与分析 | 财务报表、预测、预算、本量利、估值、比率、敏感性及时间序列等计算 |
+| 图表与报告 | 交互式 ECharts；Markdown 报告预览、编辑、保存及 Word / PDF 导出 |
+| 首页统计 | 今日 Token、AI 请求、运行成功／失败、使用时长；7／30 日趋势与供应商／模型排行 |
+
+两个集成应用使用各自的隐藏工作区，共用模型适配和数据工具。项目数据库修改使用 revision 防冲突，外部文件发生变化时拒绝直接覆盖。
+
+Word 导出需要 Pandoc；PDF 导出使用浏览器打印。普通 XLS/XLSX/DOCX 读取无需安装 Microsoft Office；缺少公式缓存时，重算可能需要 Excel 或 LibreOffice，详见[支持范围](sopweave/docs/SUPPORT.md)。
+
+### 模型供应商
+
+| 模板 | 默认 API 地址 | 协议 |
+| --- | --- | --- |
+| DeepSeek 官方 | `https://api.deepseek.com` | Chat Completions |
+| 智谱 GLM 官方 | `https://open.bigmodel.cn/api/paas/v4` | Chat Completions |
+| 硅基流动 | `https://api.siliconflow.cn/v1` | Chat Completions |
+
+三家模板各自绑定适配方式，用户填写 API Key 和模型标识。自定义供应商需选择平台支持的协议、鉴权和思考参数格式，并填写 URL。
+
+模型通过文本、流式文本、工具调用、工具结果续接和用量统计五项检查后，进入可调用列表。可用性仍受供应商额度、并发和模型能力影响。
+
+### 工作模式
+
+| 操作 | 人工审批 | 全自动 |
+| --- | --- | --- |
+| 读取文件、查询数据库 | 直接执行 | 直接执行 |
+| 项目写入、数据修改、导出 | 用户确认 | 自动执行 |
+| 本地 Python / Shell | 用户确认 | 用户确认 |
+| SOP 强制审批规则 | 生效 | 生效 |
+
+## 快速开始
 
 ### 环境要求
 
-- **Python 3.11+**（本项目开发环境为 3.14）
-- Windows / Linux（当前主要在 Windows 内网环境验证）
+- Windows 10/11 x64，CPython 3.14 x64。
+- Node.js 24 或 25：仅前端开发、构建时需要。
+- 可访问的模型 API，以及用户自己的 API Key。
 
-### 1. 安装后端依赖
+当前提供本地服务与原生 EXE 启动器。启动器负责启动服务、等待就绪并打开默认浏览器，运行时依赖与前端文件放在应用目录中。安装包及环境自动配置尚未提供。
 
-```bash
-cd finance-agent-workbench
+### 从源码运行
 
-# 有网
-pip install -r requirements.txt
+在仓库根目录打开 PowerShell，确认 `python` 指向 CPython 3.14 x64：
 
-# 无网 / 内网（使用随仓库提供的离线包）
-pip install --no-index --find-links=offline_packages -r requirements.txt
+```powershell
+cd sopweave
+python -m venv .runtime
+.\.runtime\Scripts\python.exe -m pip install --require-hashes -r requirements.lock
+npm ci --prefix frontend
+npm run build --prefix frontend
+powershell -NoProfile -File scripts\build_launcher.ps1 -DesktopShortcut
+.\SOPweave.exe
 ```
 
-### 2. 构建前端（必需）
+启动器使用 Windows .NET Framework 的编译器构建，不需要另装 .NET SDK。`-DesktopShortcut` 可省略。
 
-`frontend/dist/` 是 **Flask 运行时托管的前端产物**（见 `config/settings.py` 的 `FRONTEND_DIST_DIR`）。它属于构建产物、不在本仓库中，因此**首次运行前必须构建一次**：
+服务就绪后自动打开 `http://127.0.0.1:8080`。以后双击应用目录中的 `SOPweave.exe` 或桌面快捷方式即可启动。已有运行环境、前端产物和 EXE 时，无需重复构建。
 
-```bash
-cd finance-agent-workbench/frontend
-npm install
-npm run build      # 产物输出到 frontend/dist，由 Flask 直接托管
+- 重复启动会复用同一安装目录的服务。
+- 关闭浏览器后服务继续运行；通过托盘菜单重新打开页面、查看日志或退出服务。
+- EXE 与应用文件放在一起，桌面入口使用快捷方式。
+- 端口冲突时使用 `.\SOPweave.exe --port 8081`。
+- 诊断使用 `.\SOPweave.bat --check`；准备离线依赖见[离线安装](sopweave/docs/OFFLINE.md)。
+
+### 首次使用
+
+1. 打开“设置 → 模型配置”，添加供应商、API Key 和模型标识。
+2. 运行模型能力检查，选择可用模型。
+3. 创建项目并选择本地工作目录，上传或准备样例文件。
+4. 需要数据分析时，先将表格导入项目数据库并核对字段。
+5. 在输入框选择工作模式、SOP 和模型，发送任务。
+6. 在“财务 SOP”创建流程，或将有效对话整理成 SOP 草稿。
+
+完整操作见[用户指南](sopweave/docs/USER_GUIDE.md)。
+
+## 架构
+
+```mermaid
+flowchart TB
+    Launcher[Windows 启动器] --> Server[本地 ASGI 服务]
+    Browser[React + Vite 浏览器界面] -->|HTTP / SSE| Server
+    Server --> API[FastAPI + Flask 接口]
+    API --> Runtime[OpenAI Agents SDK Harness]
+    Runtime --> Models[供应商适配层]
+    Models --> Providers[用户配置的模型服务]
+    Runtime --> Registry[Agent / SOP 定义与版本]
+    Runtime --> Policy[工具目录、审批与执行策略]
+    Policy --> Tools[文件 / Office / 数据 / 分析工具]
+    API --> Services[确定性业务服务]
+    Services --> Tools
+    API --> Store[本地 SQLite 与运行账本]
+    Runtime --> Store
+    Tools --> Files[用户选择的项目目录]
 ```
 
-> 本项目为内网离线场景，第三方前端资源已内网化（如 `frontend/public/vditor/` 为 Vditor 包根结构的本地副本，构建时会被复制进产物），`options.cdn` 指向本地路径，无需访问公网 CDN。
+| 目录 | 职责 |
+| --- | --- |
+| `agent_profiles/`、`skills/` | 平台 Agent、内置 SOP 和参考资料；用户发布内容保存在本机数据目录 |
+| `agent_runtime/` | 模型适配、运行管理、流式事件、上下文、工具策略与恢复 |
+| `routes/`、`services/` | HTTP 输入与响应、业务编排 |
+| `tools/` | 文件、Office、数据和财务计算执行层 |
+| `storage/` | 项目、会话、数据索引、运行记录、日志与用量持久化 |
+| `frontend/` | React 界面、前端测试与静态资源 |
+| `launcher/`、`scripts/` | Windows 启动器源码、启动、构建、诊断和验证工具 |
+| `config/` | 路径、运行参数、品牌及依赖锁解析 |
+| `tests/`、`examples/` | 自动化回归与可公开分发的人工样例 |
+| `docs/` | 当前使用、架构、运行时、分发说明和第三方许可 |
 
-### 3. 启动
+以上目录均位于仓库的 `sopweave/` 下。根目录保留 README、MIT 许可、安全说明、贡献指南和 CI 配置。
 
-```bash
-cd finance-agent-workbench
-python app.py
+### 源码、环境与数据
+
+- `requirements.txt` 是完整依赖声明，`requirements.lock` 锁定安装版本及哈希；`requirements-agent.in/lock` 用于 Agent SDK 升级约束。
+- `.runtime/`、`frontend/node_modules/` 是本机依赖，`frontend/dist/` 与 `SOPweave.exe` 是构建产物，不提交源码仓库。运行预构建应用需要保留前端产物。
+- `data/` 保存本机配置、数据库、SOP、运行状态和结果；用户工作目录可以独立于安装目录。
+- `SOPWEAVE_DATA_DIR` 可指定数据目录，相对值以应用目录为基准。
+- 迁移到其他电脑时重新准备 Python 环境，完整迁移数据及项目文件；虚拟环境不能直接复制复用，外部项目目录变化后需重新选择。
+
+## 数据与隐私
+
+默认仅监听 `127.0.0.1`，不提供公网多用户服务。无平台登录、云同步、广告或在线额度系统。Agents SDK tracing 默认关闭。
+
+项目、会话、数据库、运行日志和用量统计保存在本机。API Key 保存在本机配置数据库，不随源码分发。模型请求会将输入及任务选取的数据发送到所配置的供应商；本地运行不代表远程模型调用离线。
+
+请勿提交 `data/`、密钥、真实财务文件或数据库。备份应同时覆盖数据目录及用户选择的项目目录。安全边界见 [SECURITY.md](SECURITY.md)。
+
+## 开发与验证
+
+在 `sopweave` 目录中，先构建前端与启动器，再运行回归：
+
+```powershell
+npm run build --prefix frontend
+powershell -NoProfile -File scripts\build_launcher.ps1
+.\.runtime\Scripts\python.exe -m unittest discover -s tests -t .
+npm test --prefix frontend
+.\SOPweave.bat --check
+.\.runtime\Scripts\python.exe -m pip check
 ```
 
-浏览器打开 `http://127.0.0.1:8080`，在「AI 配置」页填入大模型 API Key 后即可使用。
+测试使用临时数据和人工样例。启动器测试会实际启动隔离服务，检查重复启动、退出清理、端口冲突及目录迁移。
 
-### 4. 导出 Word（可选）
+真实模型测试需单独提供 Key，会产生供应商请求；日常回归不使用用户密钥。开发约定、依赖更新与发布门槛见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-Pandoc 可执行文件因超过 GitHub 单文件上限未纳入仓库，如需 Word 导出请自行下载：
+## 文档与支持边界
 
-> https://github.com/jgm/pandoc/releases
+- [用户指南](sopweave/docs/USER_GUIDE.md)
+- [架构说明](sopweave/docs/ARCHITECTURE.md)
+- [Agent 运行时与工具](sopweave/docs/AGENT_RUNTIME.md)
+- [Windows 启动器](sopweave/docs/LAUNCHER.md)
+- [离线安装与分发](sopweave/docs/OFFLINE.md)
+- [支持范围与数据流](sopweave/docs/SUPPORT.md)
+- [第三方许可](sopweave/docs/THIRD_PARTY_NOTICES.md)
 
-放置到 `offline_packages/pandoc/pandoc.exe`。
+当前重点支持 Windows x64 和普通 XLS/XLSX/DOCX。宏、复杂外链、嵌入对象、修订痕迹和复杂图表需按文件验证。自定义模型服务必须满足平台支持的 Chat Completions 契约。
 
----
+欢迎贡献办公 SOP、确定性业务工具、模型适配、Office 保真改进、界面优化和可复现的缺陷测试。
 
-## 五、设计铁律
+## 开源许可
 
-项目累积了一套强制工程约束，落位于 `.github/agent.md`：
-
-- **铁律 0**：架构改动必须同步更新 `docs/项目架构文档.md`
-- **铁律 00**：工作流必须落位 `agent.md` / `SKILL.md`，不得散落在代码注释
-- **铁律 000**：符号引用前必须核对 `docs/函数与变量总文档.md`，防引用错误
-- **唯一事实源**：SQLite 数据平面；Excel 只在导入 / 写回时接触
-- **限定工作目录**：所有工具调用在工作目录边界内，写操作带审批
-
----
-
-## 六、团队协作
-
-本项目由 **3 人 + 各自 AI 智能体**并行开发，协作规范见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
-
-| 文件 | 作用 |
-| :--- | :--- |
-| `CONTRIBUTING.md` | 人类协作规范：分支模型、分工矩阵、公用地雷、冲突处理协议 |
-| `.github/copilot-instructions.md` | **智能体必读铁律**：领地优先、禁止破坏性操作、完成即验证 |
-| `.github/instructions/role-*.instructions.md` | 文件级领地守卫（按 `applyTo` 自动匹配，越界即提醒） |
-| `.gitattributes` | 换行符统一为 LF，消除整文件「假冲突」 |
-
-### AI 智能体的边界约束（三层）
-
-三人各用 AI 智能体编码，最大的风险是**智能体越界改动**与**破坏性操作**。本项目用三层约束：
-
-1. **`.github/copilot-instructions.md`** —— 全局铁律，智能体启动即加载
-2. **`.github/instructions/role-*.instructions.md`** —— 按文件路径自动匹配的领地守卫；
-   改到他人领地时，智能体会看到「此文件归 <角色> 负责，请不要修改」
-3. **提交与 PR 规范** —— 提交信息带问题号（`改进问题.md` 编号），PR 必须贴实际验证输出
-
-### 三大危险操作（实测已验证）
-
-| 操作 | 后果 |
-| :--- | :--- |
-| **删除文件后重建同名文件** | Git 只看到「修改」→ 整文件冲突，随手解决即静默丢失他人工作 |
-| **改名同时大改内容** | 触发 `modify/delete` 冲突 → 他人改动静默消失，零报错 |
-| **解决冲突时只留一边** | 丢掉另一方全部工作，无任何提示 |
-
-**正确做法**：要重写文件时**原地修改内容**；若必须改名，**先单独提交一次「纯改名」**再另起提交改内容。
-
----
-
-## 七、说明
-
-- 本项目为**内网离线部署**设计，不在公网暴露服务。
-- 仓库**不包含**任何真实业务数据、用户文件与运行时数据库（`data/`、测试夹具中的业务样本均在 `.gitignore` 中排除）。
-- `docs/项目架构文档.md` 是理解本项目的第一入口，其中「隐藏项目组件」一节是看懂集成应用架构的关键。
+项目采用 [MIT License](LICENSE)。随附的第三方依赖及资源遵循各自许可，见第三方声明。

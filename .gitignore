@@ -1,5 +1,5 @@
 ﻿# =========================================================
-#  Finance Recon Agent / finance-agent-workbench
+#  SOPweave
 # =========================================================
 
 # ---------- Python ----------
@@ -8,8 +8,8 @@ __pycache__/
 *$py.class
 *.egg-info/
 .eggs/
-/finance-agent-workbench/build/
-/finance-agent-workbench/dist/
+/sopweave/build/
+/sopweave/dist/
 .venv/
 venv/
 env/
@@ -28,13 +28,9 @@ pnpm-debug.log*
 *.dmg
 *.app
 
-# ---------- pandoc 二进制本体 ----------
-# pandoc.exe 单个文件 222MB，超过 GitHub 单文件 100MB 硬上限，
-# 无法推送（错误 GH001）。请从 https://github.com/jgm/pandoc/releases 单独获取。
-finance-agent-workbench/offline_packages/pandoc/
-
 # ---------- 缓存 ----------
 .cache/
+.superpowers/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -47,7 +43,7 @@ finance-agent-workbench/offline_packages/pandoc/
 *.sqlite
 *.sqlite3
 data/
-finance-agent-workbench/data/
+sopweave/data/
 **/tmp_runs/
 **/app-workspaces/
 **/.task_memory/
@@ -57,20 +53,18 @@ finance-agent-workbench/data/
 downloads/
 
 # ---------- 测试夹具中的敏感 / 无关文件 ----------
-finance-agent-workbench/test-fixtures/**/storage/
-finance-agent-workbench/test-fixtures/**/game/
-finance-agent-workbench/test-fixtures/**/待处理数据/
-finance-agent-workbench/test-fixtures/**/*.pdf
-finance-agent-workbench/test-fixtures/**/*.docx
-finance-agent-workbench/test-fixtures/**/*.xls
-finance-agent-workbench/test-fixtures/**/*.xlsx
-finance-agent-workbench/test-fixtures/**/__pycache__/
-
-# ---------- 脚本生成的中间产物 ----------
-finance-agent-workbench/scripts/_*.docx
-finance-agent-workbench/scripts/_*.tmp
+sopweave/test-fixtures/**/storage/
+sopweave/test-fixtures/**/game/
+sopweave/test-fixtures/**/待处理数据/
+sopweave/test-fixtures/**/*.pdf
+sopweave/test-fixtures/**/*.docx
+sopweave/test-fixtures/**/*.xls
+sopweave/test-fixtures/**/*.xlsx
+sopweave/test-fixtures/**/__pycache__/
 
 # ---------- 环境变量 / 凭据 ----------
+apikey.txt
+api-key*.txt
 .env
 .env.*
 !.env.example

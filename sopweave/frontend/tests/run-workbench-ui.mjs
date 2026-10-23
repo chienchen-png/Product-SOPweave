@@ -1,0 +1,5 @@
+import {build} from 'esbuild';
+import {spawnSync} from 'node:child_process';
+await build({entryPoints:['tests/workbenchState.test.tsx','tests/workspaceDraft.test.tsx','tests/agentRun.ui.test.tsx','tests/contextIndicator.ui.test.tsx','tests/workModeSelector.ui.test.tsx'],outdir:'.test-build/workbench',outExtension:{'.js':'.mjs'},bundle:true,platform:'node',format:'esm',packages:'external',jsx:'automatic',plugins:[{name:'css-stub',setup(build){build.onResolve({filter:/\.css$/},()=>({path:'css-stub',namespace:'css-stub'}));build.onLoad({filter:/.*/,namespace:'css-stub'},()=>({contents:'',loader:'js'}));}}]});
+const result=spawnSync(process.execPath,['--import','./tests/dom-setup.mjs','--test','.test-build/workbench/workbenchState.test.mjs','.test-build/workbench/workspaceDraft.test.mjs','.test-build/workbench/agentRun.ui.test.mjs','.test-build/workbench/contextIndicator.ui.test.mjs','.test-build/workbench/workModeSelector.ui.test.mjs'],{stdio:'inherit'});
+process.exitCode=result.status??1;

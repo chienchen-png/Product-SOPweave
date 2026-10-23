@@ -95,4 +95,4 @@
 *.mp3       binary
 
 # ---------- 锁文件：不展示逐行 diff（体积大且无意义）----------
-finance-agent-workbench/frontend/package-lock.json  -diff
+sopweave/frontend/package-lock.json  -diff

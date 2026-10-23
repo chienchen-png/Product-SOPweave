@@ -1,0 +1,63 @@
+{
+  "name": "assistant-stream",
+  "version": "0.0.32",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./ai-sdk": {
+      "import": {
+        "types": "./dist/ai-sdk.d.mts",
+        "default": "./dist/ai-sdk.mjs"
+      },
+      "require": {
+        "types": "./dist/ai-sdk.d.ts",
+        "default": "./dist/ai-sdk.js"
+      }
+    }
+  },
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "ai-sdk",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "devDependencies": {
+    "ai": "^4.3.2",
+    "eslint": "^9",
+    "eslint-config-next": "15.2.4",
+    "tsup": "8.4.0",
+    "tsx": "^4.19.3",
+    "@assistant-ui/tsconfig": "0.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://www.assistant-ui.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/assistant-ui/assistant-ui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/assistant-ui/assistant-ui/issues"
+  },
+  "dependencies": {
+    "nanoid": "5.1.5",
+    "secure-json-parse": "^4.0.0"
+  },
+  "scripts": {
+    "build": "tsx scripts/build.mts"
+  }
+}

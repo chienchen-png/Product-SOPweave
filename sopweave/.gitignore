@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.runtime/
+
+# Cache
+.cache/
+
+# Database
+data/audit/
+data/skills/
+data/sop-*.log
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+# 应用临时运行快照（每次 run 生成独立 SQLite，历史累积不入 git）
+data/tmp_runs/
+
+# Offline wheels are separate release artifacts; retain local files.
+offline_packages/
+
+# Test fixtures runtime artifacts
+test-fixtures/**/.task_memory/
+test-fixtures/**/.finance-agent/
+test-fixtures/**/.sopweave/
+*.bak.*
+
+# OS
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

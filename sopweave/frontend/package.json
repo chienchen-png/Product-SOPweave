@@ -1,0 +1,66 @@
+{
+  "name": "sopweave-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <26"
+  },
+  "scripts": {
+    "test:navigation": "node tests/run-navigation-ui.mjs",
+    "test:chart-safety": "node tests/run-chart-safety.mjs",
+    "test:app-hooks": "node tests/run-hook-ui.mjs",
+    "test:chart-ui": "node tests/run-chart-ui.mjs",
+    "test": "npm run test:brand-storage && npm run test:provider-config && npm run test:model-selection && npm run test:agent-stream && npm run test:agent-interactions && npm run test:interaction-ui && npm run test:agent-config && npm run test:navigation && npm run test:chart-safety && npm run test:app-hooks && npm run test:chart-ui && npm run test:file-editor && npm run test:skill-ui && npm run test:workbench && npm run test:workbench-pages",
+    "test:brand-storage": "tsc src/lib/brand.ts --target ES2022 --module ESNext --moduleResolution bundler --skipLibCheck --outDir .test-build && node --test tests/brandStorage.test.mjs",
+    "test:interaction-ui": "node tests/run-interaction-ui.mjs",
+    "test:agent-interactions": "tsc src/lib/agentInteractions.ts --target ES2022 --module ESNext --moduleResolution bundler --skipLibCheck --outDir .test-build && node --test tests/agentInteractions.test.mjs",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test:provider-config": "tsc src/lib/providerConfig.ts --target ES2022 --module ESNext --moduleResolution bundler --skipLibCheck --outDir .test-build && node --test tests/providerConfig.test.mjs",
+    "test:model-selection": "tsc src/lib/modelSelection.ts --target ES2022 --module ESNext --moduleResolution bundler --skipLibCheck --outDir .test-build && node --test tests/modelSelection.test.mjs",
+    "test:agent-stream": "tsc src/lib/agentStream.ts --target ES2022 --module ESNext --moduleResolution bundler --skipLibCheck --outDir .test-build && node --test tests/agentStream.test.mjs",
+    "test:agent-config": "node tests/run-config-ui.mjs",
+    "test:file-editor": "node tests/run-file-editor-ui.mjs && node tests/run-file-drawer-ui.mjs",
+    "test:skill-ui": "node tests/run-skill-ui.mjs",
+    "test:workbench": "node tests/run-workbench-ui.mjs && node tests/run-chat-composer-ui.mjs",
+    "test:workbench-pages": "node tests/run-workbench-pages.mjs"
+  },
+  "dependencies": {
+    "@assistant-ui/react": "^0.8.0",
+    "@radix-ui/react-dialog": "1.3.1",
+    "@tailwindcss/vite": "^4.0.0",
+    "echarts": "6.1.0",
+    "katex": "0.19.0",
+    "lucide-react": "^0.460.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "7.18.4",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "tailwindcss": "^4.0.0",
+    "vditor": "^3.11.3"
+  },
+  "overrides": {
+    "@assistant-ui/react": {
+      "nanoid": "5.1.16"
+    },
+    "assistant-stream": {
+      "nanoid": "5.1.16"
+    },
+    "katex": "$katex"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "esbuild": "0.25.12",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.0"
+  }
+}
