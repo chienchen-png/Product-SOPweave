@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,6 +13,22 @@ from storage.project_store import ProjectStore
 
 
 class PortablePathTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == "nt", "Windows short path aliases")
+    def test_migration_matches_short_aliases_without_admitting_outside_files(self):
+        import ctypes
+        from storage.path_migration import _relative_inside
+
+        with tempfile.TemporaryDirectory(prefix="SOPweave short path regression ") as directory:
+            root = Path(directory).resolve()
+            buffer = ctypes.create_unicode_buffer(32768)
+            size = ctypes.windll.kernel32.GetShortPathNameW(str(root), buffer, len(buffer))
+            if not size or Path(buffer.value) == root:
+                self.skipTest("The temporary volume does not provide 8.3 aliases")
+            alias = Path(buffer.value)
+            self.assertEqual(_relative_inside(str(alias / "Book.xlsx"), root), "Book.xlsx")
+            self.assertEqual(_relative_inside(str(alias / "Book.xlsx.bak"), root), "Book.xlsx.bak")
+            self.assertIsNone(_relative_inside(str(alias.parent / "outside.xlsx"), root))
+
     def test_internal_paths_are_relative_and_runtime_paths_are_absolute(self) -> None:
         stored = portable_work_dir("demo", "test-fixtures/phase5")
         self.assertEqual(stored, "test-fixtures/phase5")

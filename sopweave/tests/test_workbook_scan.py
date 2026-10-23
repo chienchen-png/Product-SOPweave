@@ -168,7 +168,7 @@ class WorkbookScanTests(unittest.TestCase):
 
             self.assertEqual(first["file_hash"], second["file_hash"])
             cache_dir = root / ".sopweave" / "import-cache" / first["file_hash"]
-            self.assertEqual(Path(first["snapshot_path"]), cache_dir / "original.xlsx")
+            self.assertEqual(Path(first["snapshot_path"]), (cache_dir / "original.xlsx").resolve())
             self.assertTrue((cache_dir / "original.xlsx").is_file())
             self.assertTrue((cache_dir / "manifest.json").is_file())
 

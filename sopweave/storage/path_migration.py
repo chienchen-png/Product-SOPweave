@@ -19,8 +19,8 @@ def _relative_inside(path: str, root: Path) -> str | None:
     """Return ``path`` relative to ``root`` using Windows-safe comparison."""
     if not path or not os.path.isabs(path):
         return None
-    child_path = os.path.normpath(path)
-    parent_path = os.path.normpath(str(root))
+    child_path = str(Path(path).resolve())
+    parent_path = str(root.resolve())
     child = os.path.normcase(child_path)
     parent = os.path.normcase(parent_path)
     try:

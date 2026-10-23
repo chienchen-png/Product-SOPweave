@@ -81,7 +81,7 @@ class ReleaseRuntimeTests(unittest.TestCase):
                 check=True,
             )
             self.assertEqual(
-                Path(result.stdout.strip()), Path(directory) / "app-workspaces/finmod"
+                Path(result.stdout.strip()), (Path(directory) / "app-workspaces/finmod").resolve()
             )
 
     def test_runtime_reports_missing_and_wrong_versions_without_silently_accepting_them(

@@ -243,7 +243,7 @@ class ProjectRouteTests(unittest.TestCase):
         (target / "keep.txt").write_text("unchanged", encoding="utf-8")
         result = self.create(target)
         self.assertEqual(result.status_code, 201, result.get_json())
-        self.assertEqual(Path(result.get_json()["data"]["work_dir"]), target)
+        self.assertEqual(Path(result.get_json()["data"]["work_dir"]), target.resolve())
         self.assertEqual(
             self.db.execute("SELECT COUNT(*) FROM projects").fetchone()[0], 1
         )

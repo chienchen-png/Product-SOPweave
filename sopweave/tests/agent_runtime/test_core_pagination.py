@@ -32,6 +32,15 @@ class CorePaginationTests(unittest.TestCase):
         self.assertEqual(set(entries), {p.name for p in self.root.iterdir()})
         self.assertFalse(any("nested.txt" in entry for entry in entries))
 
+    def test_listing_and_search_use_the_same_canonical_workspace(self):
+        (self.root / "alias").mkdir()
+        (self.root / "source.txt").write_text("canonical workspace", encoding="utf-8")
+        context = SimpleNamespace(work_dir=self.root / "alias" / "..")
+        page = list_files(context, ListFiles())
+        self.assertEqual({item["path"] for item in page["entries"]}, {"alias", "source.txt"})
+        found = search_text(context, SearchText(text="canonical"))
+        self.assertEqual([item["path"] for item in found["matches"]], ["source.txt"])
+
     def test_line_and_long_line_continuations_reconstruct_exact_source(self):
         source = "首行\n" + "长" * 45000 + "\n第三行\n末行"
         (self.root / "notes.txt").write_text(source, encoding="utf-8")

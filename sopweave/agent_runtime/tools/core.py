@@ -69,7 +69,8 @@ class RunProcess(Arguments):
 
 
 def list_files(context, args):
-    root = resolve_path(context.work_dir, args.path)
+    workspace = Path(context.work_dir).resolve()
+    root = resolve_path(workspace, args.path)
     paths = sorted(
         root.iterdir(), key=lambda path: (not path.is_dir(), path.name.casefold())
     )
@@ -78,12 +79,12 @@ def list_files(context, args):
         "success": True,
         "entries": [
             {
-                "path": str(p.relative_to(context.work_dir)),
+                "path": str(p.relative_to(workspace)),
                 "is_dir": p.is_dir(),
                 "size": p.stat().st_size,
             }
             for p in selected
-            if p.resolve().is_relative_to(context.work_dir)
+            if p.resolve().is_relative_to(workspace)
         ],
         "truncated": len(paths) > args.offset + args.limit,
         "next_offset": args.offset + len(selected),
@@ -91,7 +92,8 @@ def list_files(context, args):
 
 
 def search_text(context, args):
-    root = resolve_path(context.work_dir, args.path)
+    workspace = Path(context.work_dir).resolve()
+    root = resolve_path(workspace, args.path)
     matches = []
     visited = 0
     import os
@@ -106,7 +108,7 @@ def search_text(context, args):
 
     total_bytes = 0
     for path in candidates():
-        if not path.is_file() or not path.resolve().is_relative_to(context.work_dir):
+        if not path.is_file() or not path.resolve().is_relative_to(workspace):
             continue
         visited += 1
         if visited > 5000:
@@ -125,7 +127,7 @@ def search_text(context, args):
                     if args.text.casefold() in line.casefold():
                         matches.append(
                             {
-                                "path": str(path.relative_to(context.work_dir)),
+                                "path": str(path.relative_to(workspace)),
                                 "line": index,
                                 "text": line[:500].rstrip(),
                             }
@@ -220,13 +222,14 @@ async def run_process(context, args):
 
     if args.program == "shell" and _check_blacklist(args.code):
         raise ValueError("命令被执行策略拒绝")
-    paths = [resolve_path(context.work_dir, path) for path in args.artifact_paths]
-    result = await ProcessExecutor(context.work_dir, context.event_callback).run(
+    workspace = Path(context.work_dir).resolve()
+    paths = [resolve_path(workspace, path) for path in args.artifact_paths]
+    result = await ProcessExecutor(workspace, context.event_callback).run(
         args.program, args.code, timeout=args.timeout, output_limit=args.output_limit
     )
     result["artifacts"] = [
         {
-            "path": str(path.relative_to(context.work_dir)),
+            "path": str(path.relative_to(workspace)),
             "version": file_version(path),
             "size": path.stat().st_size,
         }
